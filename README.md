@@ -4,8 +4,11 @@ This repository contains tools to send images through TCP. Solves the problem of
 
 # Installation procedure
 
-
-installation procedure...
+## PIP 
+After cloning this repository, run this in the root directory
+```
+pip install -e .
+```
 
 
 # Usage
