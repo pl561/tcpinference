@@ -1,5 +1,5 @@
 //
-// Created by Fiture on 2022/02/10.
+// Created by Pascal Lefevre, march 6th 2022
 //
 
 #ifndef BUFFERCOM_H
@@ -17,7 +17,6 @@
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/imgproc.hpp"
 #include <opencv2/highgui/highgui.hpp>
-#include "json.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,7 +36,7 @@
 #define SIZE_FLOAT 4
 #define BUFFER_SIZE 4096
 
-#define DEBUG0 1
+// #define DEBUG0 1
 
 // wraps a float vector with its shape
 class Tensor {
@@ -45,6 +44,7 @@ class Tensor {
     std::vector<long> shape;
     std::vector<float> tensor;
 
+    Tensor();
     Tensor(std::vector<float> vec, std::vector<long> shape);
     Tensor(const Tensor& ts);
     ~Tensor();

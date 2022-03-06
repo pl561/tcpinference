@@ -26,6 +26,8 @@ void print_float_vector(std::vector<float> v, int num_floats) {
     std::cout << "]";
 }
 
+Tensor::Tensor() {}
+
 Tensor::Tensor(std::vector<float> vec, std::vector<long> sh) {
     tensor = vec;
     shape = sh;
@@ -90,6 +92,7 @@ std::string receive_string(int sockfd) {
         error("ERROR receive string");
 
     std::string received_str(rstr);
+    free(rstr);
     return received_str;
 }
 
@@ -117,6 +120,7 @@ std::vector<long> receive_tensor_shape(int sockfd) {
 
     // store the shape elements inside a vector
     std::vector<long> shape(long_array, long_array + shapelen);
+    free(long_array);
 #ifdef DEBUG0
     for (auto elt : shape) std::cout << "receive_tensor_shape: " << elt << "\n";
 #endif
@@ -168,12 +172,13 @@ int read_float_array(int sockfd, float *array, long num_floats) {
     float *arr = (float *) byte_array;
     for (int i = 0; i < num_floats; i++)
         array[i] = arr[i];
-
+    free(byte_array);
     return total;
 }
 
 int write_float_array(int sockfd, float *array, long num_floats) {
     size_t num_bytes = num_floats * SIZE_FLOAT;
+    std::cout << "\nwrite_float_array>> num_bytes: " << num_bytes << std::endl;
     ssize_t total = 0;
     // std::cout << "start send" << std::endl;
     char *byte_array = (char *) array;
@@ -190,7 +195,9 @@ int write_float_array(int sockfd, float *array, long num_floats) {
 #endif
         if ( nb == -1 ) error( "send float array failed" );
     }
+#ifdef DEBUG0
     std::cout << "write_float_array: total byte sent:" << total << std::endl;
+#endif
     return total;
 }
 
@@ -199,8 +206,9 @@ int read_long_array(int sockfd, long *array, long num_longs) {
     char buffer[BUFFER_SIZE];
     char *byte_array = new char[num_bytes];
     size_t total = 0;
-
+#ifdef DEBUG0
     std::cout << "start recv long" << std::endl;
+#endif
     while (true) {
         int nbytes_left = num_bytes - total;
         ssize_t nb;
@@ -231,8 +239,10 @@ int read_long_array(int sockfd, long *array, long num_longs) {
     long *arr = (long *) byte_array;
     for (int i = 0; i < num_longs; i++)
         array[i] = arr[i];
-
+    free(byte_array);
+#ifdef DEBUG0
     std::cout << "end recv long" << std::endl;
+#endif
     return total;
 }
 
@@ -253,7 +263,9 @@ int write_long_array(int sockfd, long *array, long num_longs) {
 #endif
         if ( nb == -1 ) error( "send float array failed" );
     }
+#ifdef DEBUG0
     std::cout << "write_long_array: total long send:" << total << std::endl;
+#endif
     return total;
 }
 
@@ -267,6 +279,8 @@ void send_float_vector(int sockfd, std::vector<float> tensor, std::vector<long> 
     print_vector(shape);
     int num_floats = 1; 
     for (long l : shape) num_floats *= l;
+    print_vector(shape);
+    std::cout << "\nsend_float_vector>> num_floats: " << num_floats << std::endl;
     write_float_array(sockfd, tensor.data(), num_floats);
 }
 
@@ -279,6 +293,7 @@ std::vector<float> receive_float_vector(int sockfd, std::vector<long> shape) {
     float *float_array = new float[num_floats];
     read_float_array(sockfd, float_array, num_floats);
     std::vector<float> tensor(float_array, float_array + num_floats);
+    free(float_array);
     return tensor;
 }
 
@@ -291,6 +306,8 @@ void send_tensor(int sockfd, Tensor ts) {
     print_vector(ts.shape);
     int num_floats = 1; 
     for (long l : ts.shape) num_floats *= l;
+    print_vector(ts.shape);
+    std::cout << "\nsend_tensor>> num_floats: " << num_floats << std::endl;
     write_float_array(sockfd, ts.tensor.data(), num_floats);
 }
 
@@ -304,6 +321,7 @@ Tensor receive_tensor(int sockfd) {
     float *float_array = new float[num_floats];
     read_float_array(sockfd, float_array, num_floats);
     std::vector<float> tensor(float_array, float_array + num_floats);
+    free(float_array);
     Tensor ts(tensor, shape);
     return ts;
 }
