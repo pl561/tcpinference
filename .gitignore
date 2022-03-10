@@ -3,3 +3,8 @@
 
 build/
 .vscode/
+.DS_Store
+
+udp_camera_streaming
+
+

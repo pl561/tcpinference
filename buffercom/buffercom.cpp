@@ -1,11 +1,11 @@
 #include "buffercom.h"
 
 
-void error(const char *msg)
-{
-    perror(msg);
-    exit(0);
-}
+// void error(const char *msg)
+// {
+//     perror(msg);
+//     exit(0);
+// }
 
 template<typename T>
 void print_vector(std::vector<T>& v) {
@@ -54,15 +54,16 @@ cv::Mat Tensor::getImageFromTensor() {
 
 int send_string(int sockfd, std::string str) {
     int status;
-    size_t nbytes = str.length();
-    long nbytesl = (long) nbytes;
+    long nbytes = str.length();
+    char *nbytesl = (char *) &nbytes;
+    // long nbytesl = (long) nbytes;
     // send the string length as a long (8 bytes)
-    status = write(sockfd, &nbytesl, SIZE_LONG);
+    status = write_byte_array(sockfd, nbytesl, SIZE_LONG);
     if (status < 0)
         error("ERROR send string length");
 
     // send the string byte by byte
-    status = write(sockfd, str.c_str(), nbytes);
+    status = write_byte_array(sockfd, (char *) str.c_str(), nbytes);
     if (status < 0)
         error("ERROR send string");
     return status;
@@ -71,7 +72,7 @@ int send_string(int sockfd, std::string str) {
 std::string receive_string(int sockfd) {
     int status;
     long strlen;
-    status = read(sockfd, &strlen, SIZE_LONG);
+    status = read_byte_array(sockfd, (char *) &strlen, SIZE_LONG);
     std::cout << "status: " << status << std::endl;
     std::cout << "strlen: " << strlen << std::endl;
     if (status < 0)
@@ -82,7 +83,7 @@ std::string receive_string(int sockfd) {
 
     char *rstr = new char[strlen];
 
-    status = read(sockfd, rstr, strlen);
+    status = read_byte_array(sockfd, rstr, strlen);
     std::cout << "read string status: " << status << std::endl;
     for (int i = 0; i < strlen; i++) {
         std::cout << rstr[i];
@@ -128,146 +129,82 @@ std::vector<long> receive_tensor_shape(int sockfd) {
     return shape;
 }
 
-
-// https://stackoverflow.com/questions/4552855/tcp-fragmentation
+/*
+    FLOAT LOW LEVEL FUNCTIONS 
+*/
 int read_float_array(int sockfd, float *array, long num_floats) {
     size_t num_bytes = num_floats * SIZE_FLOAT;
-    char buffer[BUFFER_SIZE];
     char *byte_array = new char[num_bytes];
-    ssize_t total = 0;
-
-    // std::cout << "start recv" << std::endl;
-    while (true) {
-        int nbytes_left = num_bytes - total;
-        ssize_t nb;
-        if (nbytes_left < BUFFER_SIZE)
-            nb = recv(sockfd, buffer, nbytes_left, 0);
-        else
-            nb = recv(sockfd, buffer, BUFFER_SIZE, 0);
-        // copy byte by byte
-        memcpy(byte_array + total, buffer, nb);
-
-        total += nb;
-
-#ifdef DEBUG0
-            std::cout << "inloop float recv(total expected " << num_bytes << "): received: " << nb << " total: " << total << std::endl;
+#ifdef READ_INFO_FLOAT
+    printf("[I] read_float_array: start, total expected %i floats.\n", num_floats);
 #endif
-        if (nb == -1) {
-            std::cout << "-1 float recv total: " << total << "// nbytes - total: " << num_bytes - total << std::endl;
-            std::cout << "expected total num_bytes: " << num_bytes << std::endl;
-            error( "recv float tensor failed" );
-        }
-        if (nb == 0) {
-            std::cout << "break recv: " << total << std::endl;
-            break;
-        }
-        if (total >= num_bytes) {
-#ifdef DEBUG0
-            std::cout << "break float recv total: " << total << std::endl;
+    int total = read_byte_array(sockfd, byte_array, num_bytes);
+#ifdef READ_INFO_FLOAT
+    printf("[I] read_float_array: end, total received %i floats.\n", num_floats);
 #endif
-            break;
-        }
-    }
+
     // copy float by float
     float *arr = (float *) byte_array;
-    for (int i = 0; i < num_floats; i++)
-        array[i] = arr[i];
+    for (int i = 0; i < num_floats; i++) array[i] = arr[i];
     free(byte_array);
     return total;
 }
 
 int write_float_array(int sockfd, float *array, long num_floats) {
     size_t num_bytes = num_floats * SIZE_FLOAT;
-    std::cout << "\nwrite_float_array>> num_bytes: " << num_bytes << std::endl;
-    ssize_t total = 0;
-    // std::cout << "start send" << std::endl;
     char *byte_array = (char *) array;
-    while (total < num_bytes) {
-        int nbytes_left = num_bytes - total;
-        ssize_t nb;
-        if (nbytes_left < BUFFER_SIZE)
-            nb = send(sockfd, byte_array + total, nbytes_left, 0);
-        else
-            nb = send(sockfd, byte_array + total, BUFFER_SIZE, 0);
-        total += nb;
-#ifdef DEBUG0
-            std::cout << "inloop float write: " << nb << "// nbytes - total: " << num_bytes - total << std::endl;
+#ifdef WRITE_INFO_FLOAT
+    printf("[I] write_float_array: start, total expected %i floats.\n", num_floats);
 #endif
-        if ( nb == -1 ) error( "send float array failed" );
-    }
-#ifdef DEBUG0
-    std::cout << "write_float_array: total byte sent:" << total << std::endl;
+    int total = write_byte_array(sockfd, byte_array, num_bytes);
+#ifdef WRITE_INFO_FLOAT
+    printf("[I] write_float_array: end, total sent %i floats.\n", num_floats);
 #endif
     return total;
 }
+
+/*
+    FLOAT LOW LEVEL FUNCTIONS 
+*/
+
+/*
+    LONG LOW LEVEL FUNCTIONS 
+*/
 
 int read_long_array(int sockfd, long *array, long num_longs) {
     size_t num_bytes = num_longs * SIZE_LONG;
     char buffer[BUFFER_SIZE];
     char *byte_array = new char[num_bytes];
-    size_t total = 0;
-#ifdef DEBUG0
-    std::cout << "start recv long" << std::endl;
+#ifdef READ_INFO_LONG
+    printf("[I] read_long_array: start, total expected %i longs.\n", num_longs);
 #endif
-    while (true) {
-        int nbytes_left = num_bytes - total;
-        ssize_t nb;
-        if (nbytes_left < BUFFER_SIZE)
-            nb = recv(sockfd, buffer, nbytes_left, 0);
-        else
-            nb = recv(sockfd, buffer, BUFFER_SIZE, 0);
-
-        memcpy(byte_array + total, buffer, nb);
-        total += nb;
-#ifdef DEBUG0
-            std::cout << "inloop long recv(total expected " << num_bytes << "): received: " << nb << " total: " << total << std::endl;
+    int total = read_byte_array(sockfd, byte_array, num_bytes);
+#ifdef READ_INFO_LONG
+    printf("[I] read_long_array: end, total received %i longs.\n", num_longs);
 #endif
-        if (nb == -1) error("recv long tensor failed");
-        if (nb == 0) {
-            std::cout << "break recv 0: " << total << std::endl;
-            break;
-        }
-        if (total == num_bytes) {
-#ifdef DEBUG0
-            std::cout << "break recv total: " << total << std::endl;
-#endif
-            break;
-        }
-    }
-    // std::cout << ": bytes_read:" << total << std::endl;
-
     long *arr = (long *) byte_array;
-    for (int i = 0; i < num_longs; i++)
-        array[i] = arr[i];
+    for (int i = 0; i < num_longs; i++) array[i] = arr[i];
     free(byte_array);
-#ifdef DEBUG0
-    std::cout << "end recv long" << std::endl;
-#endif
     return total;
 }
 
 int write_long_array(int sockfd, long *array, long num_longs) {
     size_t num_bytes = num_longs * SIZE_LONG;
-    size_t total = 0;
     char *byte_array = (char *) array;
-    while (total != num_bytes) {
-        int nbytes_left = num_bytes - total;
-        ssize_t nb;
-        if (nbytes_left < BUFFER_SIZE)
-            nb = send(sockfd, byte_array + total, nbytes_left, 0);
-        else
-            nb = send(sockfd, byte_array + total, BUFFER_SIZE, 0);
-        total += nb;
-#ifdef DEBUG0
-            std::cout << "inloop long write: " << nb << "// nbytes - total: " << num_bytes - total << std::endl;
+#ifdef WRITE_INFO_LONG
+    printf("[I] write_long_array: start, total expected %i longs.\n", num_longs);
 #endif
-        if ( nb == -1 ) error( "send float array failed" );
-    }
-#ifdef DEBUG0
-    std::cout << "write_long_array: total long send:" << total << std::endl;
+    int total = write_byte_array(sockfd, byte_array, num_bytes);
+#ifdef WRITE_INFO_LONG
+    printf("[I] write_long_array: end, total sent %i longs.\n", num_longs);
 #endif
+
     return total;
 }
+
+/*
+    LONG LOW LEVEL FUNCTIONS 
+*/
 
 
 // send float tensor with shape

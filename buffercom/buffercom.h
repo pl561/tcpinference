@@ -30,11 +30,12 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "rawbyte.h"
 
 
-#define SIZE_LONG 8
-#define SIZE_FLOAT 4
-#define BUFFER_SIZE 4096
+// #define SIZE_LONG 8
+// #define SIZE_FLOAT 4
+// #define BUFFER_SIZE 4096
 
 // #define DEBUG0 1
 
@@ -52,7 +53,7 @@ class Tensor {
     cv::Mat getImageFromTensor();
 };
 
-void error(const char *msg);
+// void error(const char *msg);
 template<typename T> void print_vector(std::vector<T>& v);
 void print_float_vector(std::vector<float> v, int num_floats);
 

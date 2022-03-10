@@ -42,6 +42,7 @@ set(name buffercom_test)
 add_executable(
     ${name}
     ${CMAKE_CURRENT_SOURCE_DIR}/buffercom_test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rawbyte.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/buffercom.cpp
 )
 target_link_libraries(${name} gflags opencv_world zlib dl pthread)

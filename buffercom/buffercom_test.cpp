@@ -7,7 +7,7 @@
 #include "gflags/gflags.h"
 #include "buffercom.h"
 #include "buffercom_test.h"
-
+#include "rawbyte.h"
 
 
 // test if the image conversion is correct using Tensor wrapper class
@@ -168,7 +168,8 @@ int test_client_server_v1(int argc, char **argv) {
 
 
 
-            for (int j = 0; j < 10; j++) {
+            for (int j = 0; j < 100; j++) {
+                printf("\nLOOP COUNT %i\n", j);
                 // send_tensor_shape(sockfd, shape);
                 // write_float_array(sockfd, tensor.data(), num_floats);
 
@@ -181,6 +182,7 @@ int test_client_server_v1(int argc, char **argv) {
                 read_float_array(sockfd, rarray, rnum_floats);
                 std::vector<float> rtensor(rarray, rarray + rnum_floats);
                 print_float_vector(rtensor, 12);
+                printf("\nLOOP COUNT %i\n", j);
             }
 
             std::cout << std::endl;
@@ -210,7 +212,8 @@ int test_client_server_v1(int argc, char **argv) {
 
 
             float *rarray = new float[num_floats];
-            for (int j = 0; j < 10; j++) {
+            for (int j = 0; j < 100; j++) {
+                printf("\nLOOP COUNT %i\n", j);
 
                 std::vector<long> rshape = receive_tensor_shape(sockfd);
                 int rnum_floats = 1; for (long l : rshape) rnum_floats *= l;
@@ -231,6 +234,7 @@ int test_client_server_v1(int argc, char **argv) {
                 send_float_vector(sockfd, rtensor2, rshape);
                 // send_tensor_shape(sockfd, rshape);
                 // write_float_array(sockfd, rarray, rnum_floats);
+                printf("\nLOOP COUNT %i\n", j);
             }
 
 
@@ -304,12 +308,14 @@ int main(int argc, char **argv) {
             // send
             std::cout << "==== " << "client send" << " ====" << std::endl;
 
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < 40; j++) {
+                printf("\nLOOP COUNT %i\n", j);
                 std::cout << "==== " << j << " ====" << std::endl;
                 client.sendFloatTensor(rts);
 
                 rts = client.receiveFloatTensor();
                 print_float_vector(rts.tensor, 12);
+                printf("\nLOOP COUNT %i\n", j);
             }
 
             std::cout << std::endl;
@@ -339,7 +345,8 @@ int main(int argc, char **argv) {
 
             Tensor rts(ts);
             float *rarray = new float[num_floats];
-            for (int j = 0; j < 4; j++) {
+            for (int j = 0; j < 40; j++) {
+                printf("\nLOOP COUNT %i\n", j);
                 std::cout << "==== " << j << " ====" << std::endl;
                 rts = server.receiveFloatTensor();
 
@@ -353,6 +360,7 @@ int main(int argc, char **argv) {
 
                 Tensor rts2(ts2, rts.shape);
                 server.sendFloatTensor(rts2);
+                printf("\nLOOP COUNT %i\n", j);
             }
         }
 
